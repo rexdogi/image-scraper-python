@@ -1,48 +1,69 @@
-#!/usr/bin/env python3.5
-
 from google_images_download import google_images_download
 import requests
 import json
 import sys
 import argparse
 from os import remove
+from flask import Flask, request
+from flask_restful import Api, Resource, reqparse
 
-parser = argparse.ArgumentParser(description='Args')
+app = Flask(__name__)
+api = Api(app)
 
-parser.add_argument('-no_download', '--no_download', default=False, help='scraped urls will not be downloaded',
-                    type=str, required=False)
-parser.add_argument('-endpoint', '--endpoint', default='http://localhost:8080/dashboard/upload/google-images',
-                    help='endpoint',
-                    type=str, required=False)
+# parser = argparse.ArgumentParser(description='Args')
+#
+# parser.add_argument('-no_download', '--no_download', default=False, help='scraped urls will not be downloaded',
+#                     type=str, required=False)
+# parser.add_argument('-endpoint', '--endpoint', default='http://localhost:8080/dashboard/upload/google-images',
+#                     help='endpoint',
+#                     type=str, required=False)
+#
+# parser.add_argument('-search', '--search', default='', help='search',
+#                     type=str, required=False)
+#
+# parser.add_argument('-limit', '--limit', default=100, help='limit',
+#                     type=int, required=False)
 
-parser.add_argument('-search', '--search', default='', help='search',
-                    type=str, required=False)
-
-parser.add_argument('-limit', '--limit', default=100, help='limit',
-                    type=int, required=False)
-
-parsed_args = parser.parse_args()
-
-response = google_images_download.googleimagesdownload()
-arguments = {
-    "keywords": parsed_args.search,
-    "limit": parsed_args.limit,
-    "print_urls": True,
-    "extract_metadata": True,
-    "chromedriver": './chromedriver',
-    'no_download': parsed_args.no_download,
-}
-
-absolute_image_paths = response.download(arguments)
-
-with open('./logs/' + parsed_args.search + '.txt', 'r') as myfile:
-    data = json.load(myfile)
+parser = reqparse.RequestParser()
+parser.add_argument('endpoint', type=str, default='http://localhost:8080/dashboard/upload/google-images')
+parser.add_argument('search', type=str, default='', required=False)
+parser.add_argument('limit', type=str, default=100, required=False)
+parser.add_argument('no_download', type=str, default=True, required=False)
 
 
-headers = {'Content-Type': 'application/json'}
+class Scrape(Resource):
+    def get(self):
+        parsed_args = parser.parse_args()
 
-response = requests.post(parsed_args.endpoint, data=json.dumps(data), headers=headers)
+        print(parsed_args.search)
 
-print(data)
+        response = google_images_download.googleimagesdownload()
+        arguments = {
+            "keywords": parsed_args.search,
+            "limit": parsed_args.limit,
+            "print_urls": True,
+            "extract_metadata": True,
+            "chromedriver": './chromedriver',
+            'no_download': parsed_args.no_download,
+        }
 
-remove('./logs/' + parsed_args.search + '.txt')
+        absolute_image_paths = response.download(arguments)
+
+        with open('./logs/' + parsed_args.search + '.txt', 'r') as myfile:
+            data = json.load(myfile)
+
+        headers = {'Content-Type': 'application/json'}
+
+        response = requests.post(parsed_args.endpoint, data=json.dumps(data), headers=headers)
+
+        print(data)
+
+        remove('./logs/' + parsed_args.search + '.txt')
+
+        return ''
+
+
+api.add_resource(Scrape, '/scrape')
+
+if __name__ == '__main__':
+    app.run(debug=True)
