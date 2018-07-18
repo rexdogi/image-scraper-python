@@ -60,7 +60,7 @@ class Scrape(Resource):
 
         remove('./logs/' + parsed_args.search + '.txt')
 
-        return ''
+        return response
 
 
 api.add_resource(Scrape, '/scrape')
