@@ -29,6 +29,8 @@ parser.add_argument('endpoint', type=str, default='http://localhost:8080/dashboa
 parser.add_argument('search', type=str, default='', required=False)
 parser.add_argument('limit', type=str, default=100, required=False)
 parser.add_argument('no_download', type=str, default=True, required=False)
+parser.add_argument('domain', type=str, default='', required=False)
+parser.add_argument('time', type=str, default='', required=False)
 
 
 class Scrape(Resource):
@@ -43,7 +45,9 @@ class Scrape(Resource):
             "limit": parsed_args.limit,
             "print_urls": True,
             "extract_metadata": True,
-            "chromedriver": './chromedriver',
+            'time': parsed_args.time,
+            'specific_site': parsed_args.domain,
+            # "chromedriver": './chromedriver',
             'no_download': parsed_args.no_download,
         }
 
